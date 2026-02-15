@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=2.0, user-scalable=yes">
+    <title>小学科学·肺活量测量实验室 (本地存储版)</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <style>
+        body { background: #f4f9ff; padding-bottom: 30px; }
+        .container { max-width: 1300px; }
+        .card { border-radius: 28px; border: none; box-shadow: 0 12px 24px rgba(0,20,50,0.1); margin-bottom: 25px; }
+        .card-header { background: #e6f0fa; border-radius: 28px 28px 0 0 !important; font-weight: 600; font-size: 1.3rem; padding: 1rem 1.8rem; border-bottom: 2px solid #b6d0e8; }
+        .btn-tool { border-radius: 40px; padding: 0.5rem 1.2rem; font-weight: 500; }
+        .table { margin-bottom: 0; }
+        .table th { background: #d9e9ff; color: #034078; font-size: 1.1rem; border-bottom: 3px solid #9bb9dd; }
+        .table td { vertical-align: middle; font-size: 1.05rem; background-color: #f8fcff; }
+        .input-group-custom { background: white; border-radius: 60px; padding: 5px 5px 5px 20px; box-shadow: inset 0 2px 5px rgba(0,0,0,0.02); border: 1px solid #c0d3e9; }
+        .form-control, .form-select { border: none; background: transparent; font-size: 1.1rem; padding: 0.7rem 0.5rem; }
+        .form-control:focus, .form-select:focus { box-shadow: none; background: #f0f7ff; }
+        .btn-primary { background: #2667b2; border: none; border-radius: 50px; padding: 0.7rem 2rem; font-weight: 600; letter-spacing: 0.5px; box-shadow: 0 6px 0 #0d3f6b; transition: 0.1s; }
+        .btn-primary:active { transform: translateY(4px); box-shadow: 0 2px 0 #0d3f6b; }
+        .btn-outline-danger { border-radius: 40px; border-width: 2px; }
+        .btn-outline-warning { border-radius: 40px; border-width: 2px; }
+        .badge-gender { font-size: 0.9rem; padding: 0.4rem 0.7rem; border-radius: 40px; }
+        .chart-container { height: 320px; width: 100%; position: relative; margin-top: 10px; }
+        .footnote { background: #e2efff; border-radius: 50px; padding: 10px 20px; color: #014d8b; }
+        .student-id-badge { font-weight: 600; color: #0a4c8a; }
+        .delete-btn { transition: 0.2s; }
+        .delete-btn:hover { background-color: #ffc6c6; border-color: #b02a37; }
+        button { min-height: 48px; }
+        input, select { min-height: 52px; }
+        .table-responsive { border-radius: 24px; overflow: hidden; border: 2px solid #cfdef5; }
+    </style>
+</head>
+<body>
+
+<div class="container py-4">
+    <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap">
+        <h1 class="display-5 fw-bold" style="color:#144e7c;"><span style="background:#fedb9f; padding:0.2rem 1.2rem; border-radius: 60px;">🧪 肺活量实验室</span></h1>
+        <div class="badge bg-light text-dark p-3 fs-6 mt-2">
+            <span class="text-primary">📝 本地存储版</span> 数据保存在当前设备，可导出Excel
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><i class="bi bi-pencil-square"></i> ✏️ 测量记录 (学号唯一，重复提交将更新)</div>
+        <div class="card-body">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">📌 学号</label>
+                    <div class="input-group-custom">
+                        <input type="text" class="form-control" id="studentIdInput" placeholder="例如 202501" inputmode="numeric">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">⚥ 性别</label>
+                    <div class="input-group-custom">
+                        <select class="form-select" id="genderSelect">
+                            <option value="男" selected>👦 男生</option>
+                            <option value="女">👧 女生</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">💨 肺活量 (毫升)</label>
+                    <div class="input-group-custom">
+                        <input type="number" class="form-control" id="capacityInput" placeholder="如 2500" min="0" step="10">
+                    </div>
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button class="btn btn-primary flex-fill" id="submitBtn">➕ 提交 / 更新</button>
+                    <button class="btn btn-outline-warning flex-fill" id="clearFormBtn" type="button">🔄 清空</button>
+                </div>
+            </div>
+            <div class="mt-3 text-muted small">
+                <span class="badge bg-info text-dark">💡 提示</span> 每个学号只保留一条最新数据。点击表格中的 <span class="badge bg-light text-dark">✏️编辑</span> 可快速填充表单。
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span>📋 全班登记表 (自动刷新)</span>
+            <span class="badge bg-primary rounded-pill" id="studentCount">0 人</span>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive" style="max-height: 320px; overflow-y: auto; border-radius: 24px;">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>学号</th>
+                            <th>性别</th>
+                            <th>肺活量 (ml)</th>
+                            <th style="width:130px;">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <tr><td colspan="4" class="text-center py-5 text-secondary">等待加载数据…</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mt-4 p-3 bg-white rounded-4 border">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <span class="fw-bold" style="color:#1f5f96;">📊 男👦·蓝 / 女👧·粉  肺活量对比条形图</span>
+                    <span class="ms-auto small text-muted">(点击编辑可快速修改)</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="lungChart"></canvas>
+                </div>
+            </div>
+
+            <div class="mt-3 d-flex justify-content-end gap-2">
+                <button class="btn btn-outline-success" id="exportBtn">📊 导出为Excel</button>
+                <button class="btn btn-outline-danger" id="clearAllBtn">🗑️ 清空所有数据</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="footnote d-flex flex-wrap justify-content-between align-items-center">
+        <span>🟢 本地存储: 数据保存在当前设备浏览器中，刷新页面不会丢失。</span>
+        <span class="text-secondary small">如需在多台设备同步，可导出Excel后在其他设备导入。</span>
+    </div>
+</div>
+
+<script>
+let chartInstance = null;
+let studentsData = JSON.parse(localStorage.getItem('lungVolumeData')) || {};
+
+const studentIdInput = document.getElementById('studentIdInput');
+const genderSelect = document.getElementById('genderSelect');
+const capacityInput = document.getElementById('capacityInput');
+const submitBtn = document.getElementById('submitBtn');
+const clearFormBtn = document.getElementById('clearFormBtn');
+const tableBody = document.getElementById('tableBody');
+const studentCountSpan = document.getElementById('studentCount');
+const ctx = document.getElementById('lungChart').getContext('2d');
+const exportBtn = document.getElementById('exportBtn');
+const clearAllBtn = document.getElementById('clearAllBtn');
+
+function saveData() {
+    localStorage.setItem('lungVolumeData', JSON.stringify(studentsData));
+}
+
+function clearForm() {
+    studentIdInput.value = '';
+    genderSelect.value = '男';
+    capacityInput.value = '';
+    studentIdInput.focus();
+}
+
+function renderAll() {
+    renderTable(studentsData);
+    renderChart(studentsData);
+}
+
+function renderTable(dataMap) {
+    const entries = Object.entries(dataMap).map(([studentId, info]) => ({
+        studentId,
+        gender: info.gender || '男',
+        capacity: info.capacity || 0
+    }));
+
+    entries.sort((a, b) => a.studentId.localeCompare(b.studentId, undefined, { numeric: true }));
+
+    if (entries.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="4" class="text-center py-5 text-secondary">🧘 暂无记录，请填写上方表单添加</td></tr>`;
+        studentCountSpan.innerText = '0 人';
+        return;
+    }
+
+    let html = '';
+    entries.forEach(item => {
+        const genderClass = (item.gender === '男') ? 'badge bg-primary' : 'badge bg-danger';
+        const genderIcon = (item.gender === '男') ? '👦' : '👧';
+        html += `<tr>
+            <td class="student-id-badge"># ${item.studentId}</td>
+            <td><span class="${genderClass} badge-gender">${genderIcon} ${item.gender}</span></td>
+            <td><strong>${item.capacity}</strong> ml</td>
+            <td>
+                <button class="btn btn-sm btn-outline-primary me-1 edit-btn" data-id="${item.studentId}" data-gender="${item.gender}" data-cap="${item.capacity}" style="border-radius:30px;">✏️编辑</button>
+                <button class="btn btn-sm btn-outline-danger delete-btn" data-id="${item.studentId}" style="border-radius:30px;">🗑️</button>
+            </td>
+        </tr>`;
+    });
+    tableBody.innerHTML = html;
+    studentCountSpan.innerText = entries.length + ' 人';
+
+    document.querySelectorAll('.edit-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const id = btn.dataset.id;
+            const gender = btn.dataset.gender;
+            const cap = btn.dataset.cap;
+            studentIdInput.value = id;
+            genderSelect.value = gender;
+            capacityInput.value = cap;
+            studentIdInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            studentIdInput.focus();
+        });
+    });
+
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const id = btn.dataset.id;
+            if (confirm(`确定要删除学号 ${id} 的记录吗？`)) {
+                delete studentsData[id];
+                saveData();
+                renderAll();
+            }
+        });
+    });
+}
+
+function renderChart(dataMap) {
+    const entries = Object.entries(dataMap).map(([studentId, info]) => ({
+        studentId,
+        gender: info.gender || '男',
+        capacity: info.capacity || 0
+    }));
+    entries.sort((a, b) => a.studentId.localeCompare(b.studentId, undefined, { numeric: true }));
+
+    const labels = entries.map(e => e.studentId);
+    const capacities = entries.map(e => e.capacity);
+    const backgroundColors = entries.map(e => e.gender === '男' ? '#3a86ff' : '#ff70a5');
+    const borderColors = entries.map(e => e.gender === '男' ? '#1a4d9c' : '#b23b66');
+
+    if (chartInstance) chartInstance.destroy();
+
+    if (entries.length === 0) {
+        chartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: { labels: ['暂无数据'], datasets: [{ label: '肺活量 (ml)', data: [0], backgroundColor: '#ccc' }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+        });
+        return;
+    }
+
+    chartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: '肺活量 (毫升)',
+                data: capacities,
+                backgroundColor: backgroundColors,
+                borderColor: borderColors,
+                borderWidth: 2,
+                borderRadius: 8,
+                barPercentage: 0.7,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: (context) => {
+                            const raw = context.raw;
+                            const gender = entries[context.dataIndex]?.gender || '';
+                            return `${gender}生: ${raw} ml`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: { display: true, text: '肺活量 (ml)', font: { weight: 'bold', size: 14 } },
+                    grid: { color: '#e1eaf5' }
+                },
+                x: {
+                    title: { display: true, text: '学号', font: { weight: 'bold', size: 14 } },
+                    grid: { display: false }
+                }
+            },
+            layout: { padding: { top: 10, bottom: 10 } }
+        }
+    });
+}
+
+submitBtn.addEventListener('click', () => {
+    const studentId = studentIdInput.value.trim();
+    const gender = genderSelect.value;
+    const capacity = parseInt(capacityInput.value, 10);
+
+    if (!studentId) {
+        alert('❌ 请填写学号');
+        studentIdInput.focus();
+        return;
+    }
+    if (isNaN(capacity) || capacity < 0) {
+        alert('❌ 肺活量必须是0或正整数');
+        capacityInput.focus();
+        return;
+    }
+
+    const invalidChars = /[.#$\[\]]/;
+    if (invalidChars.test(studentId)) {
+        alert('❌ 学号不能包含 . # $ [ ] 等符号，请使用纯数字或字母');
+        return;
+    }
+
+    studentsData[studentId] = { gender, capacity };
+    saveData();
+    renderAll();
+    clearForm();
+});
+
+clearFormBtn.addEventListener('click', clearForm);
+
+exportBtn.addEventListener('click', () => {
+    const entries = Object.entries(studentsData).map(([id, info]) => [id, info.gender, info.capacity]);
+    const csvContent = "data:text/csv;charset=utf-8,"
+        + "学号,性别,肺活量(ml)\n"
+        + entries.map(e => e.join(",")).join("\n");
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "肺活量数据_" + new Date().toLocaleDateString() + ".csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+});
+
+clearAllBtn.addEventListener('click', () => {
+    if (confirm('确定要清空所有数据吗？此操作不可恢复！')) {
+        studentsData = {};
+        saveData();
+        renderAll();
+    }
+});
+
+[studentIdInput, genderSelect, capacityInput].forEach(el => {
+    el.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            submitBtn.click();
+        }
+    });
+});
+
+renderAll();
+</script>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+</body>
+</html>
